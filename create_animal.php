@@ -9,26 +9,26 @@ include "db.php";
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-if (!$data || !isset($data['tagId']) || !is_numeric($data['tagId'])) {
+if (!$data || !isset($data['tagId']) || empty($data['tagId'])) {
     echo json_encode(["error" => "Valid Tag ID is required"]);
     exit;
 }
 
+$tagId = $conn->real_escape_string($data['tagId']);
+$animalname = isset($data['animalname']) ? $conn->real_escape_string($data['animalname']) : '';
+$animaltype = isset($data['animaltype']) ? $conn->real_escape_string($data['animaltype']) : '';
+$sex = isset($data['sex']) ? $conn->real_escape_string($data['sex']) : '';
+$breed = isset($data['breed']) ? $conn->real_escape_string($data['breed']) : '';
+$birthdate = isset($data['birthdate']) && !empty($data['birthdate']) ? $data['birthdate'] : null;
+$ownerContact = isset($data['ownerContact']) ? $conn->real_escape_string($data['ownerContact']) : '';
+
 $sql = "INSERT INTO animals (tagId, animalname, animaltype, sex, breed, birthdate, ownerContact) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("issssss", 
-    $data['tagId'], 
-    $data['animalname'], 
-    $data['animaltype'], 
-    $data['sex'], 
-    $data['breed'], 
-    $data['birthdate'], 
-    $data['ownerContact']
-);
+$stmt->bind_param("sssssss", $tagId, $animalname, $animaltype, $sex, $breed, $birthdate, $ownerContact);
 
 if ($stmt->execute()) {
-    echo json_encode(["message" => "Animal registered successfully"]);
+    echo json_encode(["message" => "Animal registered successfully", "tagId" => $tagId]);
 } else {
     echo json_encode(["error" => $stmt->error]);
 }

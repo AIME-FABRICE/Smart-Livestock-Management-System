@@ -24,31 +24,33 @@ if (!isset($data["tagId"]) || empty($data["tagId"])) {
     exit;
 }
 
-$tagId = $data["tagId"];
-$type = isset($data["type"]) ? $data["type"] : "";
-$status = isset($data["status"]) ? $data["status"] : "";
-$notes = isset($data["notes"]) ? $data["notes"] : "";
-$startdate = isset($data["startdate"]) && !empty($data["startdate"]) ? $data["startdate"] : null;
+$tagId = $conn->real_escape_string($data["tagId"]);
+$type = isset($data["type"]) ? $conn->real_escape_string($data["type"]) : "Checkup";
+$status = isset($data["status"]) ? $conn->real_escape_string($data["status"]) : "Healthy";
+$notes = isset($data["notes"]) ? $conn->real_escape_string($data["notes"]) : "";
+$temperature = isset($data["temperature"]) ? floatval($data["temperature"]) : null;
+$startdate = isset($data["startdate"]) && !empty($data["startdate"]) ? $data["startdate"] : date("Y-m-d");
 $enddate = isset($data["enddate"]) && !empty($data["enddate"]) ? $data["enddate"] : null;
 $nexteventdate = isset($data["nexteventdate"]) && !empty($data["nexteventdate"]) ? $data["nexteventdate"] : null;
-$vetname = isset($data["vetName"]) ? $data["vetName"] : "";
-$vetcontact = isset($data["vetcontact"]) ? $data["vetcontact"] : "";
+$vetname = isset($data["vetName"]) ? $conn->real_escape_string($data["vetName"]) : "";
+$vetcontact = isset($data["vetcontact"]) ? $conn->real_escape_string($data["vetcontact"]) : "";
 
-// First, set previous records as not current (FIX: Added this critical step)
+// Set previous records as not current
 $updateStmt = $conn->prepare("UPDATE animal_health SET iscurrent = 0 WHERE tagid = ?");
 if ($updateStmt) {
-    $updateStmt->bind_param("i", $tagId);
+    $updateStmt->bind_param("s", $tagId);
     $updateStmt->execute();
     $updateStmt->close();
 }
 
-$sql = "INSERT INTO animal_health (tagid, type, status, notes, startdate, enddate, nexteventdate, vetname, vetcontact, iscurrent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+$sql = "INSERT INTO animal_health (tagid, type, status, notes, temperature, startdate, enddate, nexteventdate, vetname, vetcontact, iscurrent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("issssssss", $tagId, $type, $status, $notes, $startdate, $enddate, $nexteventdate, $vetname, $vetcontact);
+$stmt->bind_param("ssssdsssss", $tagId, $type, $status, $notes, $temperature, $startdate, $enddate, $nexteventdate, $vetname, $vetcontact);
 
 if ($stmt->execute()) {
     $response["message"] = "Health record added successfully";
+    $response["id"] = $stmt->insert_id;
 } else {
     $response["error"] = $stmt->error;
 }

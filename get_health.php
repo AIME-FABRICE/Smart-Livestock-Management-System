@@ -1,19 +1,19 @@
 <?php
-include "db.php";
+header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
 
-$response = [];
+include "db.php";
 
 $sql = "SELECT * FROM animal_health ORDER BY id DESC";
 $result = $conn->query($sql);
 
+$records = array();
 if ($result) {
     while ($row = $result->fetch_assoc()) {
-        $response[] = $row;
+        $records[] = $row;
     }
-} else {
-    $response["error"] = $conn->error;
 }
 
-echo json_encode($response);
+echo json_encode($records);
 $conn->close();
 ?>
